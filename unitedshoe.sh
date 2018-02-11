@@ -102,7 +102,25 @@ src_path="src/main/java"
 dirs=('api/bindings' 'api/contracts' 'api/controllers' 'configurations' 'entities' 'repositories' 'services')
 
 ((dir_cnt=${#dirs[@]}-1))
+echo -e "Setting up directories."
 for idx in $(seq 0 $dir_cnt); do
-  echo "Making directory $1/$src_path/$base_path/${dirs[idx]}"
   mkdir -p "$1/$src_path/$base_path/${dirs[idx]}"
+done
+
+# Inject templates.
+base_pkg="$groupId.$artifactId"
+factory_dir=$(dirname $0)
+templates_dir="$factory_dir/templates"
+
+# Iterate over all template files.
+echo -e "Adding templates."
+for file in "$templates_dir/"*; do
+  if [ -f $file ]; then
+      file_basename=$(basename $file)
+      file_path=$(echo $file_basename | rev | sed -u 's/\./\//2g' | tee | rev)
+      pkg="${file_basename%.*}"
+      
+      cp "$file" "$1/$src_path/$base_path/$file_path"
+      sed -E -i'' '1s/^/'"package $base_pkg.$pkg;"'\n\n/' "$1/$src_path/$base_path/$file_path"
+  fi
 done
