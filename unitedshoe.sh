@@ -21,7 +21,7 @@ eval set -- "$OPTS"
 
 # Verify installation of Sdkman.
 if [ -s $HOME/.sdkman/bin/sdkman-init.sh ]; then
-    source $HOME/.sdkman/bin/sdkman-init.sh 
+    source $HOME/.sdkman/bin/sdkman-init.sh
     # Verify installation of Spring Boot CLI.
     springboot=$(command -v spring 2> /dev/null)
 
@@ -119,7 +119,7 @@ for file in "$templates_dir/"*; do
       file_basename=$(basename $file)
       file_path=$(echo $file_basename | rev | sed -u 's/\./\//2g' | tee | rev)
       pkg="${file_basename%.*}"
-      
+
       cp "$file" "$1/$src_path/$base_path/$file_path"
       sed -E -i'' '1s/^/'"package $base_pkg.$pkg;"'\n\n/' "$1/$src_path/$base_path/$file_path"
   fi
@@ -133,17 +133,17 @@ touch "$build_filepath"
 add_ext() {
 	cat <<-EOF >> "$build_filepath"
 
-	ext {
-        groovyVersion = '2.4.13'
-        retrofitVersion = '2.3.0'
-        springfoxVersion = '2.8.0'
-	}
+ext {
+      groovyVersion = '2.4.13'
+      retrofitVersion = '2.3.0'
+      springfoxVersion = '2.8.0'
+}
 	EOF
 }
 
 add_deps() {
 	cat <<-EOF >> "$build_filepath"
-	      # Beginning of custom dependencies.
+        # Beginning of custom dependencies.
         compile("com.squareup.retrofit2:retrofit:\${retrofitVersion}")
         compile("com.squareup.retrofit2:converter-jackson:\${retrofitVersion}")
         compile("io.springfox:springfox-swagger2:\${springfoxVersion}")
@@ -156,10 +156,8 @@ add_deps() {
 }
 
 exclude_tomcat() {
-	cat <<-EOF >> "$build_filepath"  
-    $1 {
-        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
-    }
+	cat <<-EOF >> "$build_filepath"
+    $1 { exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat' }
 	EOF
 }
 
@@ -168,20 +166,20 @@ add_custom_tasks() {
 
 	javadoc {
     source sourceSets.main.allJava
-	
+
     title = 'Micro-Service Template Documentation'
     options.linkSource = true
     options.links = ['https://docs.oracle.com/javase/8/docs/api/', 'https://docs.spring.io/spring-boot/docs/current/api/']
     options.footer = "Generated on \${new Date().format('dd MMM yyyy')}"
     options.header = "Documentation for version \${project.version}"
-	
+
     failOnError false
 	}
-	
+
 	task bootRunDev(type: org.springframework.boot.gradle.run.BootRunTask) {
     group 'Application'
     description 'Runs the project with development profile.'
-	
+
     doFirst() {
         main = project.mainClassName
         classpath = sourceSets.main.runtimeClasspath
@@ -189,29 +187,29 @@ add_custom_tasks() {
         jvmArgs = ['-Xdebug', '-Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n']
     }
 	}
-	
+
 	task bootRunTest(type: org.springframework.boot.gradle.run.BootRunTask) {
     group 'Application'
     description 'Runs the project with test profile.'
-	
+
     doFirst() {
         main = project.mainClassName
         classpath = sourceSets.main.runtimeClasspath
         args = ['--spring.profiles.active=test']
     }
 	}
-	
+
 	task bootRunPro(type: org.springframework.boot.gradle.run.BootRunTask) {
     group 'Application'
     description 'Runs the project with production profile.'
-	
+
     doFirst() {
         main = project.mainClassName
         classpath = sourceSets.main.runtimeClasspath
         args = ['--spring.profiles.active=pro']
     }
 	}
-	
+
 	bootRun {
     args = ["--spring.profiles.active=pro"]
 	}
@@ -220,14 +218,14 @@ add_custom_tasks() {
 
 add_custom_config() {
   cased_name=$(echo $name | perl -pe 's/^(.)/\u$1/')
-  main_class="$groupId.$artifactId.$cased_name"
+  main_class="${groupId}.${artifactId}.${cased_name}Application"
 
 	cat <<-EOF >> "$build_filepath"
 
 	test {
     systemProperty 'spring.profiles.active', 'test'
 	}
-	
+
 	bootRepackage {
     mainClass = '$main_class'
 	}
@@ -252,7 +250,7 @@ while IFS= read -r line || [[ -n $line ]]; do
     exclude_tomcat "$line"
   elif [[ "$deps" == "begin" ]] && [[ "$line" =~ } ]]; then
     echo "$line" >> "$build_filepath"
-    deps="end"                                                    
+    deps="end"
     add_custom_tasks
     add_custom_config
   else
