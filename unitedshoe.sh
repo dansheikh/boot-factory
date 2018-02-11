@@ -26,20 +26,20 @@ if [ -s $HOME/.sdkman/bin/sdkman-init.sh ]; then
     springboot=$(command -v spring 2> /dev/null)
 
     if [ -z $springboot ]; then
-	      cat <<EOF
-Please install Sprint Boot CLI.
-See installation instructions:
-https://docs.spring.io/spring-boot/docs/current/reference/html/getting-started-installing-spring-boot.html#getting-started-sdkman-cli-installation
-EOF
+	      cat <<-EOF
+	Please install Sprint Boot CLI.
+	See installation instructions:
+	https://docs.spring.io/spring-boot/docs/current/reference/html/getting-started-installing-spring-boot.html#getting-started-sdkman-cli-installation
+	EOF
 	      exit 1
     fi
 else
-  cat <<EOF
-Please install Sdkman and Sprint Boot CLI.
-See respective installation instructions:
-http://sdkman.io/install.html
-https://docs.spring.io/spring-boot/docs/current/reference/html/getting-started-installing-spring-boot.html#getting-started-sdkman-cli-installation
-EOF
+	cat <<-EOF
+	Please install Sdkman and Sprint Boot CLI.
+	See respective installation instructions:
+	http://sdkman.io/install.html
+	https://docs.spring.io/spring-boot/docs/current/reference/html/getting-started-installing-spring-boot.html#getting-started-sdkman-cli-installation
+	EOF
   exit 1
 fi
 
@@ -124,3 +124,140 @@ for file in "$templates_dir/"*; do
       sed -E -i'' '1s/^/'"package $base_pkg.$pkg;"'\n\n/' "$1/$src_path/$base_path/$file_path"
   fi
 done
+
+# Enhance build file.
+build_filepath="$1/build.gradle"
+mv "$build_filepath" "$build_filepath~"
+touch "$build_filepath"
+
+add_ext() {
+	cat <<-EOF >> "$build_filepath"
+
+	ext {
+        groovyVersion = '2.4.13'
+        retrofitVersion = '2.3.0'
+        springfoxVersion = '2.8.0'
+	}
+	EOF
+}
+
+add_deps() {
+	cat <<-EOF >> "$build_filepath"
+	      # Beginning of custom dependencies.
+        compile("com.squareup.retrofit2:retrofit:\${retrofitVersion}")
+        compile("com.squareup.retrofit2:converter-jackson:\${retrofitVersion}")
+        compile("io.springfox:springfox-swagger2:\${springfoxVersion}")
+        compile("io.springfox:springfox-swagger-ui:\${springfoxVersion}")
+        compile("org.codehaus.groovy:groovy:${groovyVersion}")
+        compile('org.springframework.boot:spring-boot-starter-jetty')
+        testCompile('org.spockframework:spock-spring')
+        # End of custom dependencies.
+	EOF
+}
+
+exclude_tomcat() {
+	cat <<-EOF >> "$build_filepath"  
+    $1 {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+    }
+	EOF
+}
+
+add_custom_tasks() {
+	cat <<-EOF >> "$build_filepath"
+
+	javadoc {
+    source sourceSets.main.allJava
+	
+    title = 'Micro-Service Template Documentation'
+    options.linkSource = true
+    options.links = ['https://docs.oracle.com/javase/8/docs/api/', 'https://docs.spring.io/spring-boot/docs/current/api/']
+    options.footer = "Generated on \${new Date().format('dd MMM yyyy')}"
+    options.header = "Documentation for version \${project.version}"
+	
+    failOnError false
+	}
+	
+	task bootRunDev(type: org.springframework.boot.gradle.run.BootRunTask) {
+    group 'Application'
+    description 'Runs the project with development profile.'
+	
+    doFirst() {
+        main = project.mainClassName
+        classpath = sourceSets.main.runtimeClasspath
+        args = ['--spring.profiles.active=dev']
+        jvmArgs = ['-Xdebug', '-Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n']
+    }
+	}
+	
+	task bootRunTest(type: org.springframework.boot.gradle.run.BootRunTask) {
+    group 'Application'
+    description 'Runs the project with test profile.'
+	
+    doFirst() {
+        main = project.mainClassName
+        classpath = sourceSets.main.runtimeClasspath
+        args = ['--spring.profiles.active=test']
+    }
+	}
+	
+	task bootRunPro(type: org.springframework.boot.gradle.run.BootRunTask) {
+    group 'Application'
+    description 'Runs the project with production profile.'
+	
+    doFirst() {
+        main = project.mainClassName
+        classpath = sourceSets.main.runtimeClasspath
+        args = ['--spring.profiles.active=pro']
+    }
+	}
+	
+	bootRun {
+    args = ["--spring.profiles.active=pro"]
+	}
+	EOF
+}
+
+add_custom_config() {
+  cased_name=$(echo $name | perl -pe 's/^(.)/\u$1/')
+  main_class="$groupId.$artifactId.$cased_name"
+
+	cat <<-EOF >> "$build_filepath"
+
+	test {
+    systemProperty 'spring.profiles.active', 'test'
+	}
+	
+	bootRepackage {
+    mainClass = '$main_class'
+	}
+	EOF
+}
+
+repos=""
+deps=""
+while IFS= read -r line || [[ -n $line ]]; do
+  if [[ "$line" =~ ^\s*repositories ]]; then
+    repos="begin"
+    echo "$line" >> "$build_filepath"
+  elif [[ "$repos" == "begin" ]] && [[ "$line" =~ } ]]; then
+    echo "$line" >> "$build_filepath"
+    add_ext
+    repos="end"
+  elif [[ "$line" =~ ^\s*dependencies ]]; then
+    echo "$line" >> "$build_filepath"
+    add_deps
+    deps="begin"
+  elif [[ "$line" =~ spring-boot-starter-web ]]; then
+    exclude_tomcat "$line"
+  elif [[ "$deps" == "begin" ]] && [[ "$line" =~ } ]]; then
+    echo "$line" >> "$build_filepath"
+    deps="end"                                                    
+    add_custom_tasks
+    add_custom_config
+  else
+    echo "$line" >> "$build_filepath"
+  fi
+done < "$build_filepath~"
+
+echo "Project setup complete."
