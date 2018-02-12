@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
 
+machine=$(uname -s)
+
 # Configure command-line arguments.
-OPTS=`getopt -o a:b:d:g:hl:n: -l artifactId:,build:,dependencies:,groupId:,help,language:name: -n 'unitedshoe' -- "$@"`
+OPTS=''
+
+case "${machine}" in
+  Linux*) OPTS=`getopt -o a:b:d:g:hl:m: -l artifactId:,build:,dependencies:,groupId:,help,language:main: -n 'unitedshoe' -- "$@"`;;
+  Darwin*) OPTS=`getopt a:b:d:g:hl:m: -- "$*"`;;
+esac
 
 unitedshoe_help() {
+  case "${machine}" in
+    Linux*)
 	cat <<-EOF
   Usage:
 
@@ -19,10 +28,33 @@ unitedshoe_help() {
       -g, --groupId       *Group Id.
       -h, --help          Utility help documentation.
       -l, --language      Language preference. Choices include Java and Kotlin only.
-      -n, --name          *Main class name.
+      -m, --main          *Main class name.
 
       *Required.
 	EOF
+  ;;
+    Darwin*)
+	cat <<-EOF
+  Usage:
+
+  $0 --groupId org.example --artifactId test --dependencies web,jpa --build gradle --language kotlin --name main-class-name path-to-project
+
+  Note: 'build' and 'language' are optional.
+
+      Options             Description
+      -------             -----------
+      -a                  *Artifact Id.
+      -b                  Build tool preference. Choices include Maven and Gradle only.
+      -d                  *Spring Boot dependencies.
+      -g                  *Group Id.
+      -h                  Utility help documentation.
+      -l                  Language preference. Choices include Java and Kotlin only.
+      -m                  *Main class name.
+
+      *Required.
+	EOF
+  ;;
+  esac
   exit 0
 }
 
@@ -73,8 +105,8 @@ while true; do
 	  -g | --groupId) groupId="$2"; shift 2;;
 	  -h | --help) unitedshoe_help;;
 	  -l | --language) language="$2"; shift 2;;
-	  -n | --name) name="$2"; shift 2;;
-	  --) shift; break;;
+	  -m | --main) main="$2"; shift 2;;
+	  --) shift;;
 	  *) break;;
   esac
 done
@@ -94,8 +126,8 @@ if [ -z $dependencies ]; then
     err_msgs+="Dependencies are required."
 fi
 
-if [ -z $name ]; then
-    err_msgs+="Application name is required."
+if [ -z $main ]; then
+    err_msgs+="Main class name is required."
 fi
 
 if [ $# -gt 1 ]; then
@@ -112,7 +144,7 @@ if [ ${#err_msgs[@]} -gt 0 ]; then
 fi
 
 # Execute Spring Boot CLI.
-eval "spring init --groupId $groupId --artifactId $artifactId --build $build --dependencies $dependencies --language $language --name $name $@"
+eval "spring init --groupId $groupId --artifactId $artifactId --build $build --dependencies $dependencies --language $language --name $main $@"
 
 # Setup directories.
 base_path=$(echo "$groupId/$artifactId" | sed 's/\./\//g')
@@ -135,11 +167,12 @@ echo -e "Adding templates."
 for file in "$templates_dir/"*; do
   if [ -f $file ]; then
       file_basename=$(basename $file)
-      file_path=$(echo $file_basename | rev | sed -u 's/\./\//2g' | tee | rev)
+      file_path=$(echo $file_basename | rev | sed 's/\./\//g' | tee | sed 's/\//\./' | tee | rev)
       pkg="${file_basename%.*}"
 
       cp "$file" "$1/$src_path/$base_path/$file_path"
-      sed -E -i'' '1s/^/'"package $base_pkg.$pkg;"'\n\n/' "$1/$src_path/$base_path/$file_path"
+      sed -E -i.bak '1s/^/'"package $base_pkg.$pkg;"'\n\n/' "$1/$src_path/$base_path/$file_path"
+      rm "$1/$src_path/$base_path/$file_path.bak"
   fi
 done
 
