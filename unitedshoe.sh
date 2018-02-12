@@ -4,7 +4,25 @@
 OPTS=`getopt -o a:b:d:g:hl:n: -l artifactId:,build:,dependencies:,groupId:,help,language:name: -n 'unitedshoe' -- "$@"`
 
 unitedshoe_help() {
-  echo -e "Usage:\n\t$0 --groupId org.example --artifactId test --dependencies web,jpa --build gradle --language kotlin path-to-project\n\nNote: 'build' and 'language' are optional."
+	cat <<-EOF
+  Usage:
+
+  $0 --groupId org.example --artifactId test --dependencies web,jpa --build gradle --language kotlin --name main-class-name path-to-project
+
+  Note: 'build' and 'language' are optional.
+
+      Options             Description
+      -------             -----------
+      -a, --artifactId    *Artifact Id.
+      -b, --build         Build tool preference. Choices include Maven and Gradle only.
+      -d, --dependencies  *Spring Boot dependencies.
+      -g, --groupId       *Group Id.
+      -h, --help          Utility help documentation.
+      -l, --language      Language preference. Choices include Java and Kotlin only.
+      -n, --name          *Main class name.
+
+      *Required.
+	EOF
   exit 0
 }
 
@@ -26,7 +44,7 @@ if [ -s $HOME/.sdkman/bin/sdkman-init.sh ]; then
     springboot=$(command -v spring 2> /dev/null)
 
     if [ -z $springboot ]; then
-	      cat <<-EOF
+  cat <<-EOF
 	Please install Sprint Boot CLI.
 	See installation instructions:
 	https://docs.spring.io/spring-boot/docs/current/reference/html/getting-started-installing-spring-boot.html#getting-started-sdkman-cli-installation
