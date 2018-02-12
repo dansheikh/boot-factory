@@ -16,7 +16,7 @@ unitedshoe_help() {
 	cat <<-EOF
   Usage:
 
-  $0 --groupId org.example --artifactId test --dependencies web,jpa --build gradle --language kotlin --name main-class-name path-to-project
+  $0 --groupId org.example --artifactId test --dependencies web,jpa --build gradle --language kotlin --name main-class-name project-dir
 
   Note: 'build' and 'language' are optional.
 
@@ -194,7 +194,7 @@ ext {
 
 add_deps() {
 	cat <<-EOF >> "$build_filepath"
-        # Beginning of custom dependencies.
+        // Beginning of custom dependencies.
         compile("com.squareup.retrofit2:retrofit:\${retrofitVersion}")
         compile("com.squareup.retrofit2:converter-jackson:\${retrofitVersion}")
         compile("io.springfox:springfox-swagger2:\${springfoxVersion}")
@@ -202,7 +202,7 @@ add_deps() {
         compile("org.codehaus.groovy:groovy:${groovyVersion}")
         compile('org.springframework.boot:spring-boot-starter-jetty')
         testCompile('org.spockframework:spock-spring')
-        # End of custom dependencies.
+        // End of custom dependencies.
 	EOF
 }
 
