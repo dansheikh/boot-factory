@@ -168,10 +168,12 @@ for file in "$templates_dir/"*; do
   if [ -f $file ]; then
       file_basename=$(basename $file)
       file_path=$(echo $file_basename | rev | sed 's/\./\//g' | tee | sed 's/\//\./' | tee | rev)
-      pkg="${file_basename%.*}"
+      pkg_filename="${file_basename%.*}"
+      pkg="${pkg_filename%.*}"
 
       cp "$file" "$1/$src_path/$base_path/$file_path"
-      sed -E -i.bak '1s/^/'"package $base_pkg.$pkg;"'\n\n/' "$1/$src_path/$base_path/$file_path"
+      sed -E -i.bak '1s/^/'"package $base_pkg.$pkg;"'\
+/' "$1/$src_path/$base_path/$file_path"
       rm "$1/$src_path/$base_path/$file_path.bak"
   fi
 done
