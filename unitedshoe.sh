@@ -258,4 +258,6 @@ while IFS= read -r line || [[ -n $line ]]; do
   fi
 done < "$build_filepath~"
 
+rm "$build_filepath~"
+
 echo "Project setup complete."
