@@ -1,0 +1,90 @@
+hibernate:
+  dialect: org.hibernate.dialect.H2Dialect
+  hbm2ddl:
+    auto: false
+  show_sql: true
+
+init-db: true
+init-scripts:
+  - schema.sql
+  - data.sql
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:~/esi-dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    platform: h2
+    username: sysadmin
+    password:
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  jpa:
+    hibernate:
+      ddl-auto: false
+      format-sql: true
+    show-sql: true
+  profiles: dev
+
+---
+
+hibernate:
+  dialect: org.hibernate.dialect.H2Dialect
+  hbm2ddl:
+    auto: false
+  show_sql: true
+
+init-db: true
+init-scripts:
+  - schema.sql
+  - data.sql
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:~/esi-dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    platform: h2
+    username: sysadmin
+    password:
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  jpa:
+    hibernate:
+      ddl-auto: false
+      format-sql: true
+    show-sql: true
+  profiles: test
+
+---
+
+hibernate:
+  dialect: org.hibernate.dialect.H2Dialect
+  hbm2ddl:
+    auto: false
+  show_sql: true
+
+init-db: true
+init-scripts:
+  - schema.sql
+  - data.sql
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:~/esi-dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    platform: h2
+    username: sysadmin
+    password:
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  jpa:
+    hibernate:
+      ddl-auto: false
+      format-sql: true
+    show-sql: true
+  profiles: pro

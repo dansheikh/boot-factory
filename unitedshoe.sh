@@ -149,6 +149,7 @@ eval "spring init --groupId $groupId --artifactId $artifactId --build $build --d
 # Setup directories.
 base_path=$(echo "$groupId/$artifactId" | sed 's/\./\//g')
 src_path="src/main/java"
+res_path="src/main/resources"
 dirs=('api/bindings' 'api/contracts' 'api/controllers' 'configurations' 'entities' 'repositories' 'services')
 
 ((dir_cnt=${#dirs[@]}-1))
@@ -173,9 +174,17 @@ for file in "$templates_dir/"*; do
 
       cp "$file" "$1/$src_path/$base_path/$file_path"
       sed -E -i.bak '1s/^/'"package $base_pkg.$pkg;"'\
+\
 /' "$1/$src_path/$base_path/$file_path"
       rm "$1/$src_path/$base_path/$file_path.bak"
   fi
+done
+
+# Inject resources.
+resources_dir="$factory_dir/resources"
+
+for file in "$resources_dir"/*; do
+  cp $file "$1/$res_path/"
 done
 
 # Enhance build file.
