@@ -1,3 +1,5 @@
+drop table Users, Accounts if exists;
+
 create table Users
 (
   id int not null generated always as identity,

@@ -8,9 +8,6 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Configuration
 public class RetrofitConfig {
 
-  @Value("${api.iex.url}")
-  private String iexBaseUrl;
-
   @Bean(name = "retrofitBuilder")
   public Retrofit.Builder retrofitBuilder() {
     return new Retrofit.Builder().addConverterFactory(JacksonConverterFactory.create());
