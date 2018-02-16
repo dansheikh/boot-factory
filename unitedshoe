@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import subprocess
+import sys
+
+def _check_cli():
+  completed = subprocess.run(['command', '-v', 'spring', '2>', '/dev/null'], stdout=subprocess.PIPE)
+  if completed.returncode > 0:
+    msg="""
+    https://docs.spring.io/spring-boot/docs/current/reference/html/getting-started-installing-spring-boot.html#getting-started-sdkman-cli-installation
+    """
+    sys.stderr.write(msg)
+    SystemExit(1)
+
+def _make_dirs(project_dir, group_id, artifact_id, language):
+    src_path = "src/main/{language}".format(language=language)
+    base_path = "{project_dir}/{src_path}/{group_id}/{artifact_id}".format(project_dir=project_dir, src_path=src_path, group_id=group_id, artifact_id=artifact_id).replace('.','/')
+    dirs = ['api/bindings', 'api/contracts', 'api/controllers', 'configurations', 'entities', 'repositories', 'services']
+
+    for dir in dirs:
+        path = "{base_path}/{dir}".format(base_path=base_path, dir=dir)
+        os.makedirs(path)
+
+    print("Made directories.")
+
+def _main(args):
+  _check_cli()
+  _make_dirs(args.project_dir, args.group_id, args.artifact_id, args.language)
+  print('Setup complete.')
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description='United Shoe')
+  parser.add_argument('-a', '--artifact-id', action='store', required=True, type=str, help='project artifact id')
+  parser.add_argument('-d', '--dependencies', action='store', required=True, type=str, help='spring boot dependencies')
+  parser.add_argument('-g', '--group-id', action='store', required=True, type=str, help='project group id')
+  parser.add_argument('-l', '--language', action='store', default='java', choices=['java', 'kotlin'], type=str, help='project language')
+  parser.add_argument('-n', '--name', action='store', required=True, type=str, help='main class name')
+  parser.add_argument('-t', '--type', action='store', default='gradle-project', choices=['maven-project', 'gradle-project'], help='project type')
+  parser.add_argument('project_dir')
+  args = parser.parse_args()
+
+  _main(args)
