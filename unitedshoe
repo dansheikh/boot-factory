@@ -2,6 +2,8 @@
 
 import argparse
 import os
+import re
+import shutil
 import subprocess
 import sys
 
@@ -21,13 +23,49 @@ def _make_dirs(project_dir, group_id, artifact_id, language):
 
     for dir in dirs:
         path = "{base_path}/{dir}".format(base_path=base_path, dir=dir)
-        os.makedirs(path)
+        if not os.path.isdir(path):
+            os.makedirs(path)
 
     print("Made directories.")
+
+def _setup_configurations(project_dir, group_id, artifact_id, language):
+    src_path = "src/main/{language}".format(language=language)
+    base_path = "{project_dir}/{src_path}/{group_id}/{artifact_id}".format(project_dir=project_dir, src_path=src_path, group_id=group_id, artifact_id=artifact_id).replace('.','/')
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    path = "{dirname}/templates".format(dirname=dirname)
+
+    pkg_path = re.compile('.*/templates/(.*)')
+
+    for (root, dirs, files) in os.walk(path, topdown=False):
+        for file in files:
+            full_path = os.path.join(root, file)
+            match = re.search(pkg_path, full_path)
+            target = match.group(1)
+            dest = "{base_path}/{target}".format(base_path=base_path, target=target)
+            shutil.copy(full_path, dest)
+
+            with open(dest, 'r+') as handle:
+                rel_path = target.rsplit('.', 1)[0]
+                pkg = "{group_id}.{artifact_id}.{rel_path};".format(group_id=group_id, artifact_id=artifact_id, rel_path=rel_path).replace('/', '.')
+                contents = handle.read()
+                handle.seek(0, 0)
+                handle.write(pkg + '\n\n' + contents)
+
+def _setup_resources(project_dir):
+    res_path = "{project_dir}/src/main/resources".format(project_dir=project_dir)
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    path = "{dirname}/resources".format(dirname=dirname)
+
+    for (root, dirs, files) in os.walk(path, topdown=False):
+        for file in files:
+            dest = "{res_path}/{file}".format(res_path=res_path, file=file)
+            shutil.copy(os.path.join(root, file), dest)
 
 def _main(args):
   _check_cli()
   _make_dirs(args.project_dir, args.group_id, args.artifact_id, args.language)
+  _setup_configurations(args.project_dir, args.group_id, args.artifact_id, args.language)
+  _setup_resources(args.project_dir)
   print('Setup complete.')
 
 if __name__ == '__main__':
