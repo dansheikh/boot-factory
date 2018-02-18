@@ -4,110 +4,234 @@ import argparse
 import os
 import re
 import shutil
-import subprocess
-import sys
 import urllib.parse
 import urllib.request
 import zipfile
 
 def _boot_spring(language, java_version, type, project_dir, group_id, artifact_id, name, dependencies):
-  base_url = 'https://start.spring.io/starter.zip?'
-  query_tuples = [('language', language), ('javaVersion', java_version), ('type', type), ('groupId', group_id), ('artifactId', artifact_id), ('baseDir', project_dir), ('packageName', group_id + '.' + artifact_id)]
+    base_url = 'https://start.spring.io/starter.zip?'
+    query_tuples = [('language', language), ('javaVersion', java_version), ('type', type), ('groupId', group_id), ('artifactId', artifact_id), ('baseDir', project_dir), ('packageName', group_id + '.' + artifact_id)]
 
-  for dependency in dependencies.split(','):
-    query_tuples.append(('style', dependency))
+    for dependency in dependencies.split(','):
+        query_tuples.append(('style', dependency))
 
-  query = urllib.parse.urlencode(query_tuples)
-  url = "{base_url}{query}".format(base_url=base_url, query=query)
-  req = urllib.request.Request(url)
-  
-  with urllib.request.urlopen(req) as response:
-    file = response.read()
+    query = urllib.parse.urlencode(query_tuples)
+    url = "{base_url}{query}".format(base_url=base_url, query=query)
+    req = urllib.request.Request(url)
     file_name = "{cwd}/{zip_name}.zip".format(cwd=os.getcwd(), zip_name=project_dir)
 
-    with open(file_name, 'wb') as file_handle:
-      file_handle.write(file)
+    with urllib.request.urlopen(req) as response:
+        file = response.read()
 
-  boot_zip = zipfile.ZipFile(file_name)
-  boot_zip.extractall()
+        with open(file_name, 'wb') as file_handle:
+            file_handle.write(file)
 
-  if (os.path.exists(file_name)):
-    os.remove(file_name)
+    boot_zip = zipfile.ZipFile(file_name)
+    boot_zip.extractall()
+
+    if os.path.exists(file_name):
+        os.remove(file_name)
 
 def _make_dirs(project_dir, group_id, artifact_id, language):
-  src_path = "src/main/{language}".format(language=language)
-  base_path = "{project_dir}/{src_path}/{group_id}/{artifact_id}".format(project_dir=project_dir, src_path=src_path, group_id=group_id, artifact_id=artifact_id).replace('.','/')
-  dirs = ['api/bindings', 'api/contracts', 'api/controllers', 'configurations', 'entities', 'repositories', 'services']
+    src_path = "src/main/{language}".format(language=language)
+    base_path = "{project_dir}/{src_path}/{group_id}/{artifact_id}".format(project_dir=project_dir, src_path=src_path, group_id=group_id, artifact_id=artifact_id).replace('.','/')
+    folders = ['api/bindings', 'api/contracts', 'api/controllers', 'configurations', 'entities', 'repositories', 'services']
 
-  for dir in dirs:
-    path = "{base_path}/{dir}".format(base_path=base_path, dir=dir)
-    if not os.path.isdir(path):
-      os.makedirs(path)
+    for folder in folders:
+        path = "{base_path}/{folder}".format(base_path=base_path, folder=folder)
+        if not os.path.isdir(path):
+            os.makedirs(path)
 
-  print("Made directories.")
+    print("Made directories.")
 
 def _setup_configurations(language, project_dir, group_id, artifact_id):
-  src_path = "src/main/{language}".format(language=language)
-  base_path = "{project_dir}/{src_path}/{group_id}/{artifact_id}".format(project_dir=project_dir, src_path=src_path, group_id=group_id, artifact_id=artifact_id).replace('.','/')
-  dirname, filename = os.path.split(os.path.abspath(__file__))
-  path = "{dirname}/templates".format(dirname=dirname)
+    src_path = "src/main/{language}".format(language=language)
+    base_path = "{project_dir}/{src_path}/{group_id}/{artifact_id}".format(project_dir=project_dir, src_path=src_path, group_id=group_id, artifact_id=artifact_id).replace('.','/')
+    dirname, _ = os.path.split(os.path.abspath(__file__))
+    path = "{dirname}/templates".format(dirname=dirname)
 
-  pkg_path = re.compile('.*/templates/(.*)')
+    pkg_path = re.compile('.*/templates/(.*)')
 
-  for (root, dirs, files) in os.walk(path, topdown=False):
-    for file in files:
-      full_path = os.path.join(root, file)
-      match = re.search(pkg_path, full_path)
-      target = match.group(1)
-      dest = "{base_path}/{target}".format(base_path=base_path, target=target)
-      shutil.copy(full_path, dest)
+    for (root, _, files) in os.walk(path, topdown=False):
+        for file in files:
+            full_path = os.path.join(root, file)
+            match = re.search(pkg_path, full_path)
+            target = match.group(1)
+            dest = "{base_path}/{target}".format(base_path=base_path, target=target)
+            shutil.copy(full_path, dest)
 
-      with open(dest, 'r+') as handle:
-        tmp_path = target.rsplit('.', 1)[0]
-        rel_path = tmp_path.rsplit('/', 1)[0]
-        pkg = "package {group_id}.{artifact_id}.{rel_path};".format(group_id=group_id, artifact_id=artifact_id, rel_path=rel_path).replace('/', '.')
-        contents = handle.read()
-        handle.seek(0, 0)
-        handle.write(pkg + '\n\n' + contents)
+            with open(dest, 'r+') as handle:
+                tmp_path = target.rsplit('.', 1)[0]
+                rel_path = tmp_path.rsplit('/', 1)[0]
+                pkg = "package {group_id}.{artifact_id}.{rel_path};".format(group_id=group_id, artifact_id=artifact_id, rel_path=rel_path).replace('/', '.')
+                contents = handle.read()
+                handle.seek(0, 0)
+                handle.write(pkg + '\n\n' + contents)
 
-  print('Added configuration files.')
+    print('Added configuration files.')
 
 def _setup_resources(project_dir):
-  res_path = "{project_dir}/src/main/resources".format(project_dir=project_dir)
-  dirname, filename = os.path.split(os.path.abspath(__file__))
-  path = "{dirname}/resources".format(dirname=dirname)
+    res_path = "{project_dir}/src/main/resources".format(project_dir=project_dir)
+    dirname, _ = os.path.split(os.path.abspath(__file__))
+    path = "{dirname}/resources".format(dirname=dirname)
 
-  for (root, dirs, files) in os.walk(path, topdown=False):
-    for file in files:
-      dest = "{res_path}/{file}".format(res_path=res_path, file=file)
-      shutil.copy(os.path.join(root, file), dest)
+    for (root, _, files) in os.walk(path, topdown=False):
+        for file in files:
+            dest = "{res_path}/{file}".format(res_path=res_path, file=file)
+            shutil.copy(os.path.join(root, file), dest)
 
-  print('Added resource files.')
+    print('Added resource files.')
 
-def _enhance_build(args):
-    pass 
+def _ext():
+    return """ext {
+\tgroovyVersion = '2.4.13'
+\tretrofitVersion = '2.3.0'
+\tspringfoxVersion = '2.8.0'
+}\n\n"""
 
+def _custom_deps():
+    return """\tcompile("com.squareup.retrofit2:retrofit:${retrofitVersion}")
+\tcompile("com.squareup.retrofit2:converter-jackson:${retrofitVersion}")
+\tcompile("io.springfox:springfox-swagger2:${springfoxVersion}")
+\tcompile("io.springfox:springfox-swagger-ui:${springfoxVersion}")
+\tcompile("org.codehaus.groovy:groovy:${groovyVersion}")
+\ttestCompile('org.spockframework:spock-spring')\n"""
+
+def _settings(name):
+    pascal_cased = name[0].upper() + name[1:]
+    settings = """test {{
+\tsystemProperty 'spring.profiles.active', 'test'
+}}\n
+bootRepackage {{
+\tmainClass = 'com.bcg.dv.{pascal_cased}Application'
+}}\n\n""".format(pascal_cased=pascal_cased)
+    return settings
+
+def _tasks():
+    return """javadoc {
+\tsource sourceSets.main.allJava
+
+\ttitle = 'Micro-Service Template Documentation'
+\toptions.linkSource = true
+\toptions.links = ['https://docs.oracle.com/javase/8/docs/api/', 'https://docs.spring.io/spring-boot/docs/current/api/']
+\toptions.footer = "Generated on ${new Date().format('dd MMM yyyy')}"
+\toptions.header = "Documentation for version ${project.version}"
+
+\tfailOnError false
+}\n
+task bootRunDev(type: org.springframework.boot.gradle.run.BootRunTask) {
+\tgroup 'Application'
+\tdescription 'Runs the project with development profile.'
+
+\tdoFirst() {
+\t\tmain = project.mainClassName
+\t\tclasspath = sourceSets.main.runtimeClasspath
+\t\targs = ['--spring.profiles.active=dev']
+\t\tjvmArgs = ['-Xdebug', '-Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n']
+\t}
+}\n
+task bootRunTest(type: org.springframework.boot.gradle.run.BootRunTask) {
+\tgroup 'Application'
+\tdescription 'Runs the project with test profile.'
+
+\tdoFirst() {
+\t\tmain = project.mainClassName
+\t\tclasspath = sourceSets.main.runtimeClasspath
+\t\targs = ['--spring.profiles.active=test']
+\t}
+}\n
+task bootRunPro(type: org.springframework.boot.gradle.run.BootRunTask) {
+\tgroup 'Application'
+\tdescription 'Runs the project with production profile.'
+
+\tdoFirst() {
+\t\tmain = project.mainClassName
+\t\tclasspath = sourceSets.main.runtimeClasspath
+\t\targs = ['--spring.profiles.active=pro']
+\t}
+}\n
+bootRun {
+\targs = ["--spring.profiles.active=pro"]
+}"""
+
+def _enhance_build(project_dir):
+    build_file = "{cwd}/{project_dir}/build.gradle".format(cwd=os.getcwd(), project_dir=project_dir)
+    backup_build_file = "{cwd}/{project_dir}/build.gradle~".format(cwd=os.getcwd(), project_dir=project_dir)
+
+    shutil.move(build_file, backup_build_file)
+
+    buildscript_regex = re.compile('^\s*buildscript\s*{')
+    close_regex = re.compile('\s*}\s*')
+    plugin_regex = re.compile('^\s*apply\s*plugin:\s*\'(.+)\'')
+    deps_regex = re.compile('^\s*dependencies\s*{\s*')
+    starter_web_regex = re.compile('^\s*compile\(\'org.springframework.boot:spring-boot-starter-web\'\)\s*')
+    
+    plugins = {'java': False, 'groovy': False, 'eclipse': False, 'idea': False, 'org.springframework.boot': False}
+
+    buildscripting = False
+    applying = False
+    depending = False
+
+    with open(backup_build_file, 'r') as backup_build:
+        with open(build_file, 'w') as build:
+            for line in backup_build:
+                if re.search(buildscript_regex, line) is not None:
+                    buildscripting = True
+                if re.search(plugin_regex, line) is not None:                    
+                    if not applying:
+                        buildscripting = False
+                        applying = True
+                    plugin_match = re.search(plugin_regex, line)
+                    plugins[plugin_match.group(1)] = True
+                    build.write(line)
+                elif applying and re.search(plugin_regex, line) is None:
+                    applying = False
+                    for (plugin, applied) in plugins.items():
+                        if not applied:
+                            build.write('apply plugin: \'' + plugin + '\'\n')
+                    build.write('\n')
+                elif not buildscripting and re.search(deps_regex, line) is not None:
+                    if not depending:
+                        depending = True
+                        build.write(_ext())
+                        build.write(line)
+                        build.write(_custom_deps())
+                elif not buildscripting and depending and re.search(starter_web_regex, line) is not None:
+                    mod_line = line.rstrip('\n\r') + ' {\n\t\texclude group: \'org.springframework.boot\', module: \'spring-boot-starter-tomcat\'\n\t}\n'
+                    build.write(mod_line)
+                elif not buildscripting and depending and re.search(close_regex, line) is not None: 
+                    build.write(line + '\n')
+                    build.write(_settings(args.name))
+                    build.write(_tasks())
+                    depending = False
+                else:
+                    build.write(line)
+
+    os.remove(backup_build_file)
+    print('Enhanced build file.')
+                        
 def _main(args):
-  _boot_spring(args.language, args.java_version, args.type, args.project_dir, args.group_id, args.artifact_id, args.name, args.dependencies)
-  _make_dirs(args.project_dir, args.group_id, args.artifact_id, args.language)
-  _setup_configurations(args.language, args.project_dir, args.group_id, args.artifact_id)
-  _setup_resources(args.project_dir)
-  print('Setup complete.')
+    _boot_spring(args.language, args.java_version, args.type, args.project_dir, args.group_id, args.artifact_id, args.name, args.dependencies)
+    _make_dirs(args.project_dir, args.group_id, args.artifact_id, args.language)
+    _setup_configurations(args.language, args.project_dir, args.group_id, args.artifact_id)
+    _setup_resources(args.project_dir)
+    _enhance_build(args.project_dir)
+    print('Setup complete.')
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description='United Shoe')
-  parser.add_argument('-a', '--artifact-id', action='store', required=True, type=str, help='project artifact id')
-  parser.add_argument('-d', '--dependencies', action='store', required=True, type=str, help='spring boot dependencies')
-  parser.add_argument('-g', '--group-id', action='store', required=True, type=str, help='project group id')
-  parser.add_argument('-l', '--language', action='store', default='java', choices=['java','groovy', 'kotlin'], type=str, help='project language')
-  parser.add_argument('-n', '--name', action='store', required=True, type=str, help='main class name')
-  parser.add_argument('-p', '--packaging', action='store', default='jar', type=str, choices=['jar', 'war'], help='packaging type')
-  parser.add_argument('-t', '--type', action='store', default='gradle-project', choices=['maven-project', 'gradle-project'], help='project type')
-  parser.add_argument('-j', '--java-version', action='store', default=1.8, help='java version', type=float)
-  security = parser.add_mutually_exclusive_group()
-  security.add_argument('--saml', action='store_true')
-  security.add_argument('--oauth', action='store_true')
-  parser.add_argument('project_dir')
-  args = parser.parse_args()
+    parser = argparse.ArgumentParser(description='United Shoe')
+    parser.add_argument('-a', '--artifact-id', action='store', required=True, type=str, help='project artifact id')
+    parser.add_argument('-d', '--dependencies', action='store', required=True, type=str, help='spring boot dependencies')
+    parser.add_argument('-g', '--group-id', action='store', required=True, type=str, help='project group id')
+    parser.add_argument('-l', '--language', action='store', default='java', choices=['java','groovy', 'kotlin'], type=str, help='project language')
+    parser.add_argument('-n', '--name', action='store', required=True, type=str, help='main class name')
+    parser.add_argument('-p', '--packaging', action='store', default='jar', type=str, choices=['jar', 'war'], help='packaging type')
+    parser.add_argument('-t', '--type', action='store', default='gradle-project', choices=['maven-project', 'gradle-project'], help='project type')
+    parser.add_argument('-j', '--java-version', action='store', default=1.8, help='java version', type=float)
+    security = parser.add_mutually_exclusive_group()
+    security.add_argument('--saml', action='store_true')
+    security.add_argument('--oauth', action='store_true')
+    parser.add_argument('project_dir')
+    args = parser.parse_args()
 
-  _main(args)
+    _main(args)
