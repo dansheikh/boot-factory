@@ -87,7 +87,14 @@ def _ext():
 \tgroovyVersion = '2.4.13'
 \tretrofitVersion = '2.3.0'
 \tspringfoxVersion = '2.8.0'
+\tspringSecurityVersion = '1.0.3.RELEASE'
 }\n\n"""
+
+def _saml():
+    return "\tcompile(\"org.springframework.security.extensions:spring-security-saml2-core:${springSecurityVersion}\")\n"
+
+def oauth():
+    pass
 
 def _custom_deps():
     return """\tcompile("com.squareup.retrofit2:retrofit:${retrofitVersion}")
@@ -95,6 +102,7 @@ def _custom_deps():
 \tcompile("io.springfox:springfox-swagger2:${springfoxVersion}")
 \tcompile("io.springfox:springfox-swagger-ui:${springfoxVersion}")
 \tcompile("org.codehaus.groovy:groovy:${groovyVersion}")
+\tcompile("org.springframework.session:spring-session-data-redis")
 \ttestCompile('org.spockframework:spock-spring')\n"""
 
 def _settings(name):
@@ -154,7 +162,7 @@ bootRun {
 \targs = ["--spring.profiles.active=pro"]
 }"""
 
-def _enhance_build(project_dir):
+def _enhance_build(project_dir, saml, oauth):
     build_file = "{cwd}/{project_dir}/build.gradle".format(cwd=os.getcwd(), project_dir=project_dir)
     backup_build_file = "{cwd}/{project_dir}/build.gradle~".format(cwd=os.getcwd(), project_dir=project_dir)
 
@@ -196,6 +204,10 @@ def _enhance_build(project_dir):
                         build.write(_ext())
                         build.write(line)
                         build.write(_custom_deps())
+                        if saml:
+                            build.write(_saml())
+                        if oauth:
+                            build.write(_oauth())
                 elif not buildscripting and depending and re.search(starter_web_regex, line) is not None:
                     mod_line = line.rstrip('\n\r') + ' {\n\t\texclude group: \'org.springframework.boot\', module: \'spring-boot-starter-tomcat\'\n\t}\n'
                     build.write(mod_line)
@@ -215,7 +227,7 @@ def _main(args):
     _make_dirs(args.project_dir, args.group_id, args.artifact_id, args.language)
     _setup_configurations(args.language, args.project_dir, args.group_id, args.artifact_id)
     _setup_resources(args.project_dir)
-    _enhance_build(args.project_dir)
+    _enhance_build(args.project_dir, args.saml, args.oauth)
     print('Setup complete.')
 
 if __name__ == '__main__':
