@@ -108,7 +108,6 @@ def _custom_deps():
 \tcompile("io.springfox:springfox-swagger-ui:${springfoxVersion}")
 \tcompile("org.codehaus.groovy:groovy:${groovyVersion}")
 \tcompile('org.springframework.session:spring-session-data-redis')
-\tcompile('org.springframework.boot:spring-boot-start-actuator')
 \tcompile("org.hibernate.validator:hibernate-validator:${validatorVersion}")
 \tcompile("org.glassfish:javax.el:${elVersion}")
 \ttestCompile('org.spockframework:spock-spring')\n"""
