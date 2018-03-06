@@ -84,17 +84,22 @@ def _setup_resources(project_dir):
 
 def _ext():
     return """ext {
-\tgroovyVersion = '2.4.13'
-\tretrofitVersion = '2.3.0'
-\tspringfoxVersion = '2.8.0'
-\tspringSecurityVersion = '1.0.3.RELEASE'
+\tgroovyVersion = '2.+'
+\tretrofitVersion = '2.+'
+\tspringfoxVersion = '2.+'
+\tspringOauthVersion = '2.+'
+\tspringJwtVersion = '1.+'
+\tspringSamlVersion = '1.+'
+\telVersion = '3.+'
+\tvalidatorVersion = '6.+'
 }\n\n"""
 
 def _saml():
-    return "\tcompile(\"org.springframework.security.extensions:spring-security-saml2-core:${springSecurityVersion}\")\n"
+    return "\tcompile(\"org.springframework.security.extensions:spring-security-saml2-core:${springSamlVersion}\")\n"
 
-def oauth():
-    pass
+def _oauth():
+    return """\tcompile("org.springframework.security.oauth:spring-security-oauth2:${springOauthVersion}")
+\tcompile("org.springframework.security:spring-security-jwt:${springJwtVersion}")\n"""
 
 def _custom_deps():
     return """\tcompile("com.squareup.retrofit2:retrofit:${retrofitVersion}")
@@ -102,9 +107,10 @@ def _custom_deps():
 \tcompile("io.springfox:springfox-swagger2:${springfoxVersion}")
 \tcompile("io.springfox:springfox-swagger-ui:${springfoxVersion}")
 \tcompile("org.codehaus.groovy:groovy:${groovyVersion}")
-\tcompile("org.springframework.session:spring-session-data-redis")
-\tcompile('org.hibernate.validator:hibernate-validator:6.+')
-\tcompile('org.glassfish:javax.el:3.+')
+\tcompile('org.springframework.session:spring-session-data-redis')
+\tcompile('org.springframework.boot:spring-boot-start-actuator')
+\tcompile("org.hibernate.validator:hibernate-validator:${validatorVersion}")
+\tcompile("org.glassfish:javax.el:${elVersion}")
 \ttestCompile('org.spockframework:spock-spring')\n"""
 
 def _settings(name):
@@ -121,7 +127,7 @@ def _tasks():
     return """javadoc {
 \tsource sourceSets.main.allJava
 
-\ttitle = 'Micro-Service Template Documentation'
+\ttitle = 'Service Template Documentation'
 \toptions.linkSource = true
 \toptions.links = ['https://docs.oracle.com/javase/8/docs/api/', 'https://docs.spring.io/spring-boot/docs/current/api/']
 \toptions.footer = "Generated on ${new Date().format('dd MMM yyyy')}"
@@ -164,7 +170,7 @@ bootRun {
 \targs = ["--spring.profiles.active=pro"]
 }"""
 
-def _enhance_build(project_dir, saml, oauth):
+def _enhance_build(project_dir, engine, auth):
     build_file = "{cwd}/{project_dir}/build.gradle".format(cwd=os.getcwd(), project_dir=project_dir)
     backup_build_file = "{cwd}/{project_dir}/build.gradle~".format(cwd=os.getcwd(), project_dir=project_dir)
 
@@ -206,12 +212,12 @@ def _enhance_build(project_dir, saml, oauth):
                         build.write(_ext())
                         build.write(line)
                         build.write(_custom_deps())
-                        if saml:
+                        if auth == 'saml':
                             build.write(_saml())
-                        if oauth:
+                        elif auth == 'oauth':
                             build.write(_oauth())
-                elif not buildscripting and depending and re.search(starter_web_regex, line) is not None:
-                    mod_line = line.rstrip('\n\r') + ' {\n\t\texclude group: \'org.springframework.boot\', module: \'spring-boot-starter-tomcat\'\n\t}\n'
+                elif not buildscripting and depending and engine == 'jetty' and re.search(starter_web_regex, line) is not None:
+                    mod_line = line.rstrip('\n\r') + ' {\n\t\texclude group: \'org.springframework.boot\', module: \'spring-boot-starter-tomcat\'\n\t}\n\tcompile(\'org.springframework.boot:spring-boot-starter-jetty\')\n'
                     build.write(mod_line)
                 elif not buildscripting and depending and re.search(close_regex, line) is not None: 
                     build.write(line + '\n')
@@ -225,15 +231,32 @@ def _enhance_build(project_dir, saml, oauth):
     print('Enhanced build file.')
                         
 def _main(args):
+    engine = 'tomcat'
+    auth = None
+
+    engine_opts = [args.jetty, args.netty]
+    auth_opts = [args.saml, args.oauth]
+
+    for opt in engine_opts:
+        if opt is not None:
+            engine = opt
+
+    for opt in auth_opts:
+        if opt is not None:
+            auth = opt
+
     _boot_spring(args.language, args.java_version, args.type, args.project_dir, args.group_id, args.artifact_id, args.name, args.dependencies)
     _make_dirs(args.project_dir, args.group_id, args.artifact_id, args.language)
     _setup_configurations(args.language, args.project_dir, args.group_id, args.artifact_id)
     _setup_resources(args.project_dir)
-    _enhance_build(args.project_dir, args.saml, args.oauth)
+    _enhance_build(args.project_dir, engine, auth)
     print('Setup complete.')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='United Shoe')
+    engine = parser.add_mutually_exclusive_group()
+    security = parser.add_mutually_exclusive_group()
+
     parser.add_argument('-a', '--artifact-id', action='store', required=True, type=str, help='project artifact id')
     parser.add_argument('-d', '--dependencies', action='store', required=True, type=str, help='spring boot dependencies')
     parser.add_argument('-g', '--group-id', action='store', required=True, type=str, help='project group id')
@@ -242,10 +265,11 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--packaging', action='store', default='jar', type=str, choices=['jar', 'war'], help='packaging type')
     parser.add_argument('-t', '--type', action='store', default='gradle-project', choices=['maven-project', 'gradle-project'], help='project type')
     parser.add_argument('-j', '--java-version', action='store', default=1.8, help='java version', type=float)
-    security = parser.add_mutually_exclusive_group()
-    security.add_argument('--saml', action='store_true')
-    security.add_argument('--oauth', action='store_true')
-    parser.add_argument('project_dir')
+    engine.add_argument('--jetty', action='store_const', const='jetty')
+    engine.add_argument('--netty', action='store_const', const='netty')
+    security.add_argument('--saml', action='store_const', const='saml')
+    security.add_argument('--oauth', action='store_const', const='oauth')
+    parser.add_argument('project_dir', help='new project directory name')
     args = parser.parse_args()
 
     _main(args)
