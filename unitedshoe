@@ -8,9 +8,9 @@ import urllib.parse
 import urllib.request
 import zipfile
 
-def _boot_spring(language, java_version, boot_version, type, project_dir, group_id, artifact_id, name, dependencies):
+def _boot_spring(language, java_version, boot_version, type, project_dir, group_id, artifact_id, name, dependencies, packaging):
     base_url = 'https://start.spring.io/starter.zip?'
-    query_tuples = [('language', language), ('javaVersion', java_version), ('bootVersion', boot_version), ('type', type), ('groupId', group_id), ('artifactId', artifact_id), ('baseDir', project_dir), ('packageName', group_id + '.' + artifact_id)]
+    query_tuples = [('language', language), ('javaVersion', java_version), ('bootVersion', boot_version), ('type', type), ('groupId', group_id), ('artifactId', artifact_id), ('name', name), ('baseDir', project_dir), ('packageName', group_id + '.' + artifact_id), ('packaging', packaging)]
 
     for dependency in dependencies.split(','):
         query_tuples.append(('style', dependency))
@@ -244,7 +244,7 @@ def _main(args):
         if opt is not None:
             auth = opt
 
-    _boot_spring(args.language, args.java_version, args.boot_version, args.type, args.project_dir, args.group_id, args.artifact_id, args.name, args.dependencies)
+    _boot_spring(args.language, args.java_version, args.boot_version, args.type, args.project_dir, args.group_id, args.artifact_id, args.name, args.dependencies, args.packaging)
     _make_dirs(args.project_dir, args.group_id, args.artifact_id, args.language)
     _setup_configurations(args.language, args.project_dir, args.group_id, args.artifact_id)
     _setup_resources(args.project_dir)
