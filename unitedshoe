@@ -8,9 +8,9 @@ import urllib.parse
 import urllib.request
 import zipfile
 
-def _boot_spring(language, java_version, type, project_dir, group_id, artifact_id, name, dependencies):
+def _boot_spring(language, java_version, boot_version, type, project_dir, group_id, artifact_id, name, dependencies):
     base_url = 'https://start.spring.io/starter.zip?'
-    query_tuples = [('language', language), ('javaVersion', java_version), ('type', type), ('groupId', group_id), ('artifactId', artifact_id), ('baseDir', project_dir), ('packageName', group_id + '.' + artifact_id)]
+    query_tuples = [('language', language), ('javaVersion', java_version), ('bootVersion', boot_version), ('type', type), ('groupId', group_id), ('artifactId', artifact_id), ('baseDir', project_dir), ('packageName', group_id + '.' + artifact_id)]
 
     for dependency in dependencies.split(','):
         query_tuples.append(('style', dependency))
@@ -117,7 +117,7 @@ def _settings(name):
     settings = """test {{
 \tsystemProperty 'spring.profiles.active', 'test'
 }}\n
-bootRepackage {{
+bootJar {{
 \tmainClass = 'com.bcg.dv.{pascal_cased}Application'
 }}\n\n""".format(pascal_cased=pascal_cased)
     return settings
@@ -134,7 +134,7 @@ def _tasks():
 
 \tfailOnError false
 }\n
-task bootRunDev(type: org.springframework.boot.gradle.run.BootRunTask) {
+task bootRunDev(type: org.springframework.boot.gradle.tasks.run.BootRun) {
 \tgroup 'Application'
 \tdescription 'Runs the project with development profile.'
 
@@ -145,7 +145,7 @@ task bootRunDev(type: org.springframework.boot.gradle.run.BootRunTask) {
 \t\tjvmArgs = ['-Xdebug', '-Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n']
 \t}
 }\n
-task bootRunTest(type: org.springframework.boot.gradle.run.BootRunTask) {
+task bootRunTest(type: org.springframework.boot.gradle.tasks.run.BootRun) {
 \tgroup 'Application'
 \tdescription 'Runs the project with test profile.'
 
@@ -155,7 +155,7 @@ task bootRunTest(type: org.springframework.boot.gradle.run.BootRunTask) {
 \t\targs = ['--spring.profiles.active=test']
 \t}
 }\n
-task bootRunPro(type: org.springframework.boot.gradle.run.BootRunTask) {
+task bootRunPro(type: org.springframework.boot.gradle.tasks.run.BootRun) {
 \tgroup 'Application'
 \tdescription 'Runs the project with production profile.'
 
@@ -244,7 +244,7 @@ def _main(args):
         if opt is not None:
             auth = opt
 
-    _boot_spring(args.language, args.java_version, args.type, args.project_dir, args.group_id, args.artifact_id, args.name, args.dependencies)
+    _boot_spring(args.language, args.java_version, args.boot_version, args.type, args.project_dir, args.group_id, args.artifact_id, args.name, args.dependencies)
     _make_dirs(args.project_dir, args.group_id, args.artifact_id, args.language)
     _setup_configurations(args.language, args.project_dir, args.group_id, args.artifact_id)
     _setup_resources(args.project_dir)
@@ -257,6 +257,7 @@ if __name__ == '__main__':
     security = parser.add_mutually_exclusive_group()
 
     parser.add_argument('-a', '--artifact-id', action='store', required=True, type=str, help='project artifact id')
+    parser.add_argument('-b', '--boot-version', action='store', default='2.0.0.RELEASE', type=str, help='spring boot version')
     parser.add_argument('-d', '--dependencies', action='store', required=True, type=str, help='spring boot dependencies')
     parser.add_argument('-g', '--group-id', action='store', required=True, type=str, help='project group id')
     parser.add_argument('-l', '--language', action='store', default='java', choices=['java','groovy', 'kotlin'], type=str, help='project language')
