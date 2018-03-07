@@ -118,7 +118,7 @@ def _settings(name):
 \tsystemProperty 'spring.profiles.active', 'test'
 }}\n
 bootJar {{
-\tmainClass = 'com.bcg.dv.{pascal_cased}Application'
+\tmainClassName = 'com.bcg.dv.{pascal_cased}Application'
 }}\n\n""".format(pascal_cased=pascal_cased)
     return settings
 
