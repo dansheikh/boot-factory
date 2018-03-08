@@ -91,7 +91,8 @@ def _ext():
 \tspringJwtVersion = '1.+'
 \tspringSamlVersion = '1.+'
 \telVersion = '3.+'
-\tvalidatorVersion = '6.+'
+\tvalidatorVersion = '2.+'
+\thibernateValidatorVersion = '6.+'
 }\n\n"""
 
 def _saml():
@@ -108,7 +109,9 @@ def _custom_deps():
 \tcompile("io.springfox:springfox-swagger-ui:${springfoxVersion}")
 \tcompile("org.codehaus.groovy:groovy:${groovyVersion}")
 \tcompile('org.springframework.session:spring-session-data-redis')
-\tcompile("org.hibernate.validator:hibernate-validator:${validatorVersion}")
+\tcompile("javax.validation:validation-api:${validatorVersion}")
+\tcompile("org.hibernate.validator:hibernate-validator:${hibernateValidatorVersion}")
+\tcompile("org.hibernate.validator:hibernate-validator-annotation-processor:${hibernateValidatorVersion}")
 \tcompile("org.glassfish:javax.el:${elVersion}")
 \ttestCompile('org.spockframework:spock-spring')\n"""
 
