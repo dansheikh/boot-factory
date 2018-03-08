@@ -8,6 +8,9 @@ import urllib.parse
 import urllib.request
 import zipfile
 
+def _pascal_case(str):
+    return str[0].upper() + str[1:]
+
 def _boot_spring(language, java_version, boot_version, type, project_dir, group_id, artifact_id, name, dependencies, packaging):
     base_url = 'https://start.spring.io/starter.zip?'
     query_tuples = [('language', language), ('javaVersion', java_version), ('bootVersion', boot_version), ('type', type), ('groupId', group_id), ('artifactId', artifact_id), ('name', name), ('baseDir', project_dir), ('packageName', group_id + '.' + artifact_id), ('packaging', packaging)]
@@ -82,10 +85,14 @@ def _setup_resources(project_dir):
 
     print('Added resource files.')
 
+def _mainClass(name):
+    return "mainClassName = '{group_id}.{artifact_id}.{pascal_cased}Application'".format(group_id=group_id, artifact_id=artifact_id, pascal_cased=_pascal_case(name))
+
 def _ext():
     return """ext {
 \tgroovyVersion = '2.+'
 \tretrofitVersion = '2.+'
+\tspockSpringVersion = '1.+'
 \tspringfoxVersion = '2.+'
 \tspringOauthVersion = '2.+'
 \tspringJwtVersion = '1.+'
@@ -113,15 +120,15 @@ def _custom_deps():
 \tcompile("org.hibernate.validator:hibernate-validator:${hibernateValidatorVersion}")
 \tcompile("org.hibernate.validator:hibernate-validator-annotation-processor:${hibernateValidatorVersion}")
 \tcompile("org.glassfish:javax.el:${elVersion}")
-\ttestCompile('org.spockframework:spock-spring')\n"""
+\ttestCompile("org.spockframework:spock-spring:${spockSpringVersion}")\n"""
 
-def _settings(name):
-    pascal_cased = name[0].upper() + name[1:]
+def _settings(group_id, artifact_id, name):
+    pascal_cased = _pascal_case(name) 
     settings = """test {{
 \tsystemProperty 'spring.profiles.active', 'test'
 }}\n
 bootJar {{
-\tmainClassName = 'com.bcg.dv.{pascal_cased}Application'
+\tmainClassName = '{group_id}.{artifact_id}.{pascal_cased}Application'
 }}\n\n""".format(pascal_cased=pascal_cased)
     return settings
 
@@ -184,7 +191,7 @@ def _enhance_build(project_dir, engine, auth):
     deps_regex = re.compile('^\s*dependencies\s*{\s*')
     starter_web_regex = re.compile('^\s*compile\(\'org.springframework.boot:spring-boot-starter-web\'\)\s*')
     
-    plugins = {'java': False, 'groovy': False, 'eclipse': False, 'idea': False, 'org.springframework.boot': False}
+    plugins = {'java': False, 'application': False, 'groovy': False, 'eclipse': False, 'idea': False, 'org.springframework.boot': False}
 
     buildscripting = False
     applying = False
@@ -211,6 +218,7 @@ def _enhance_build(project_dir, engine, auth):
                 elif not buildscripting and re.search(deps_regex, line) is not None:
                     if not depending:
                         depending = True
+                        build.write(_mainClass(args.group_id, args.artifact_id, args.name))
                         build.write(_ext())
                         build.write(line)
                         build.write(_custom_deps())
@@ -223,7 +231,7 @@ def _enhance_build(project_dir, engine, auth):
                     build.write(mod_line)
                 elif not buildscripting and depending and re.search(close_regex, line) is not None: 
                     build.write(line + '\n')
-                    build.write(_settings(args.name))
+                    build.write(_settings(args.group_id, args.artifact_id, args.name))
                     build.write(_tasks())
                     depending = False
                 else:
