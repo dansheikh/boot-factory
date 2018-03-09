@@ -148,36 +148,28 @@ task bootRunDev(type: org.springframework.boot.gradle.tasks.run.BootRun) {
 \tgroup 'Application'
 \tdescription 'Runs the project with development profile.'
 
-\tdoFirst() {
-\t\tmain = project.mainClassName
-\t\tclasspath = sourceSets.main.runtimeClasspath
-\t\targs = ['--spring.profiles.active=dev']
-\t\tjvmArgs = ['-Xdebug', '-Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n']
-\t}
+\tmain = project.mainClassName
+\tclasspath = sourceSets.main.runtimeClasspath
+\targs = ['--spring.profiles.active=dev']
+\tjvmArgs = ['-Xdebug', '-Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n']
 }\n
 task bootRunTest(type: org.springframework.boot.gradle.tasks.run.BootRun) {
 \tgroup 'Application'
 \tdescription 'Runs the project with test profile.'
 
-\tdoFirst() {
-\t\tmain = project.mainClassName
-\t\tclasspath = sourceSets.main.runtimeClasspath
-\t\targs = ['--spring.profiles.active=test']
-\t}
+\tmain = project.mainClassName
+\tclasspath = sourceSets.main.runtimeClasspath
+\targs = ['--spring.profiles.active=test']
 }\n
 task bootRunPro(type: org.springframework.boot.gradle.tasks.run.BootRun) {
 \tgroup 'Application'
 \tdescription 'Runs the project with production profile.'
 
-\tdoFirst() {
-\t\tmain = project.mainClassName
+\tmain = project.mainClassName
 \t\tclasspath = sourceSets.main.runtimeClasspath
 \t\targs = ['--spring.profiles.active=pro']
 \t}
-}\n
-bootRun {
-\targs = ["--spring.profiles.active=pro"]
-}"""
+}\n"""
 
 def _enhance_build(project_dir, engine, auth):
     build_file = "{cwd}/{project_dir}/build.gradle".format(cwd=os.getcwd(), project_dir=project_dir)
