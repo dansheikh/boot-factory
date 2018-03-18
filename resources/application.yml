@@ -11,11 +11,8 @@ init-scripts:
 
 spring:
   datasource:
-    url: jdbc:h2:mem:~/esi-dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    platform: h2
-    username: sysadmin
-    password:
     driver-class-name: org.h2.Driver
+    platform: h2
   h2:
     console:
       enabled: true
@@ -42,11 +39,8 @@ init-scripts:
 
 spring:
   datasource:
-    url: jdbc:h2:mem:~/esi-dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    platform: h2
-    username: sysadmin
-    password:
     driver-class-name: org.h2.Driver
+    platform: h2
   h2:
     console:
       enabled: true
@@ -73,15 +67,11 @@ init-scripts:
 
 spring:
   datasource:
-    url: jdbc:h2:mem:~/esi-dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    platform: h2
-    username: sysadmin
-    password:
     driver-class-name: org.h2.Driver
+    platform: h2
   h2:
     console:
-      enabled: true
-      path: /h2
+      enabled: false
   jpa:
     hibernate:
       ddl-auto: false
