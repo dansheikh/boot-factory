@@ -86,7 +86,7 @@ def _setup_resources(project_dir):
     print('Added resource files.')
 
 def _mainClass(name):
-    return "mainClassName = '{group_id}.{artifact_id}.{pascal_cased}Application'".format(group_id=group_id, artifact_id=artifact_id, pascal_cased=_pascal_case(name))
+    return "mainClassName = '{group_id}.{artifact_id}.{pascal_cased}Application'\n".format(group_id=group_id, artifact_id=artifact_id, pascal_cased=_pascal_case(name))
 
 def _ext():
     return """ext {
