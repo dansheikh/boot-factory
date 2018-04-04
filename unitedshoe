@@ -85,8 +85,8 @@ def _setup_resources(project_dir):
 
     print('Added resource files.')
 
-def _mainClass(name):
-    return "mainClassName = '{group_id}.{artifact_id}.{pascal_cased}Application'\n".format(group_id=group_id, artifact_id=artifact_id, pascal_cased=_pascal_case(name))
+def _mainClass(group_id, artifact_id, name):
+    return "mainClassName = '{group_id}.{artifact_id}.{pascal_cased}Application'\n\n".format(group_id=group_id, artifact_id=artifact_id, pascal_cased=_pascal_case(name))
 
 def _ext():
     return """ext {
@@ -130,7 +130,7 @@ def _settings(group_id, artifact_id, name):
 }}\n
 bootJar {{
 \tmainClassName = '{group_id}.{artifact_id}.{pascal_cased}Application'
-}}\n\n""".format(pascal_cased=pascal_cased)
+}}\n\n""".format(group_id=group_id, artifact_id=artifact_id, pascal_cased=pascal_cased)
     return settings
 
 def _tasks():
