@@ -12,10 +12,14 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Profile({"dev", "test"})
 public class SwaggerConfig {
 
+  private ApiInfo info() {
+    ApiInfo apiInfo = new ApiInfoBuilder().title("TODO")
+      .description("TODO").version("TODO").build();
+
   @Bean(name = "apiDocket")
   public Docket apiDocket() {
-    return new Docket(DocumentationType.SWAGGER_2).select()
+    return new Docket(DocumentationType.SWAGGER_2).useDefaultResponseMessages(false).select()
         .apis(RequestHandlerSelectors.any())
-        .paths(PathSelectors.any()).build();
+        .paths(PathSelectors.any()).build().apiInfo(info());
   }
 }

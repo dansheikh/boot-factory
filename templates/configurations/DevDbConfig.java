@@ -15,7 +15,7 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
-@EnableJpaRepositories(basePackages = {"com.bcg.dv.repositories"},
+@EnableJpaRepositories(basePackages = {""},
     entityManagerFactoryRef = "devEntityManagerFactory",
     transactionManagerRef = "devTransactionManager")
 @EnableTransactionManagement
@@ -26,9 +26,6 @@ public class DevDbConfig {
 
   @Value("${hibernate.dialect}")
   private String hibernateDialect;
-
-  @Value("${hibernate.hbm2ddl.auto}")
-  private String hibernateHbm2Ddl;
 
   @Value("${hibernate.show_sql}")
   private String hibernateShowSql;
@@ -47,7 +44,6 @@ public class DevDbConfig {
         new LocalContainerEntityManagerFactoryBean();
     final Properties jpaVendorProperties = new Properties();
 
-    jpaVendorProperties.setProperty("hibernate.hbm2ddl.auto", hibernateHbm2Ddl);
     jpaVendorProperties.setProperty("hibernate.dialect", hibernateDialect);
     jpaVendorProperties.setProperty("hibernate.show_sql", hibernateShowSql);
 
@@ -56,7 +52,7 @@ public class DevDbConfig {
     factory.setDataSource(dataSource);
     factory.setJpaVendorAdapter(jpaVendorAdapter);
     factory.setJpaProperties(jpaVendorProperties);
-    factory.setPackagesToScan("com.bcg.dv.entities");
+    factory.setPackagesToScan("");
     factory.afterPropertiesSet();
 
     return factory;
