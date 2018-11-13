@@ -9,7 +9,7 @@ EOF
 	cat <<-EOF
   Usage:
 
-  $0 --groupId org.example --artifactId test --name main-class-name --secure project-dir
+  $0 --groupId org.example --artifactId test --name main-class-name --project project-name --secure project-dir
 
       Parameters             Description
       ----------             -----------
@@ -17,7 +17,8 @@ EOF
       -g, --groupId          Group Id.
       -h, --help             Utility help documentation.
       -n, --name             Main class name.
-      -s, --secure           Enable security.
+      -p, --project          Project name.
+      -s, --secure           [Optional] Enable security.
 
 	EOF
 }

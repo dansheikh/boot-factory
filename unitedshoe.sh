@@ -1,77 +1,101 @@
 #!/usr/bin/env bash
 
 # Load helper scripts.
-. lib/help.sh 
-. lib/dependencies.sh
+. "${BASH_SOURCE%/*}/lib/dependencies.sh"
+. "${BASH_SOURCE%/*}/lib/help.sh"
+. "${BASH_SOURCE%/*}/lib/scaffold.sh"
 
 function main {
-    local undefined='Undefined'
-    local group_id=''
-    local artifact_id=''
-    local main_name=''
-    local secure=false
+  local undefined='Undefined'
+  local group_id=''
+  local artifact_id=''
+  local main_name=''
+  local project=''
+  local secure=false
+  local path=''
 
-    local machine=$(uname -s)
-    local optspec=":ahgns-:"
+  local machine=$(uname -s)
+  local optspec=":ahgnps-:"
 
-    while getopts "${optspec}" opt $@; do
+  while getopts "${optspec}" opt $@; do
     case "${opt}" in
-        a)
-          artifact_id="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+      a)
+        artifact_id="${!OPTIND}"; OPTIND=$((OPTIND + 1))
         ;;
-        h)
+      h)
+        help::usage
+        exit 0
+        ;;
+      g)
+        group_id="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+        ;;
+      n)
+        main_name="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+        ;;
+      p)
+        project="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+        ;;
+      s)
+        secure=true
+        ;;
+      -)
+        case "${OPTARG}" in
+          help)
             help::usage
             exit 0
-        ;;
-        g)
-          group_id="${!OPTIND}"; OPTIND=$((OPTIND + 1))
-        ;;
-        n)
-          main_name="${!OPTIND}"; OPTIND=$((OPTIND + 1))
-        ;;
-        s)
-          secure=true
-        ;;
-        -)
-            case "${OPTARG}" in
-                help)
-                    help::usage
-                    exit 0
-                ;;
-                groupId)
-                    group_id="${!OPTIND}"; OPTIND=$((OPTIND + 1))
-                ;;
-                groupId=*)
-                    group_id="${OPTARG#*=}"; 
-                ;;
-                artifactId)
-                    artifact_id="${!OPTIND}"; OPTIND=$((OPTIND + 1))
-                ;;
-                artifactId=*)
-                    artifact_id="${OPTARG#*=}"
-                ;;
-                name)
-                    main_name="${!OPTIND}"; OPTIND=$((OPTIND + 1))
-                ;;
-                name=*)
-                    main_name="${OPTARG#*=}"
-                ;;
-            esac
-        ;;
-        \?)
-            help::usage "${OPTARG}"
-            exit 1
-        ;;
+            ;;
+          groupId)
+            group_id="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+            ;;
+          groupId=*)
+            group_id="${OPTARG#*=}"; 
+            ;;
+          artifactId)
+            artifact_id="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+            ;;
+          artifactId=*)
+            artifact_id="${OPTARG#*=}"
+            ;;
+          name)
+            main_name="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+            ;;
+          name=*)
+            main_name="${OPTARG#*=}"
+            ;;
+          project)
+            project="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+            ;;
+          project=*)
+            project="${OPTARG#*}"
+            ;;
+          *)
+            if [[ "$OPTERR" = 1 && "${optspec:0:1}" != ":" ]]; then
+              echo "Unknown argument --${OPTARG}" >&2
+            fi
         esac
-    done
+        ;;
+      \?)
+        help::usage "${OPTARG}"
+        exit 1
+        ;;
+    esac
+  done
 
-    shift $((OPTIND - 1))
+  # Shift to allow for post option processing.
+  shift $((OPTIND - 1))
 
-    if [[ -z "$group_id" || -z "$artifact_id" || -z "$main_name" ]]; then
-      echo "Error: 'groupId' [${group_id:-undefined}], 'artifactId' [${artifact_id:-undefined}] and 'main' [${main_name:-undefined}] are required!"
-    fi
+  if [[ $# == 1 ]]; then
+    path=$1
+  fi
 
-    dependencies::id
+  if [[ -z "$group_id" || -z "$artifact_id" || -z "$main_name" || -z "$project" || -z "$path" ]]; then
+    echo "Error: 'groupId' [${group_id:-undefined}], 'artifactId' [${artifact_id:-undefined}], 'name' [${main_name:-undefined}], 'project' [${project:-undefined}], and 'path' [${path:-undefined}] are required!"
+  fi
+
+  # 1. Create scaffold, i.e. directories and files.
+  scaffold::setup "${path}" "${project}" "${group_id}" "${artifact_id}"
+  # 2. Add dependencies.
+  dependencies::id
 }
 
 main "$@"
@@ -201,8 +225,8 @@ main "$@"
 #
 #      cp "$file" "$1/$src_path/$base_path/$file_path"
 #      sed -E -i.bak '1s/^/'"package $base_pkg.$pkg;"'\
-#\
-#/' "$1/$src_path/$base_path/$file_path"
+  #\
+  #/' "$1/$src_path/$base_path/$file_path"
 #      rm "$1/$src_path/$base_path/$file_path.bak"
 #  fi
 #done
