@@ -92,10 +92,10 @@ function main {
     echo "Error: 'groupId' [${group_id:-undefined}], 'artifactId' [${artifact_id:-undefined}], 'name' [${main_name:-undefined}], 'project' [${project:-undefined}], and 'path' [${path:-undefined}] are required!"
   fi
 
-  # 1. Create scaffold, i.e. directories and files.
-  scaffold::setup "${path}" "${project}" "${group_id}" "${artifact_id}"
-  # 2. Add dependencies.
+  # 1. Version dependencies.
   dependencies::id
+  # 2. Create scaffold, i.e. directories and files.
+  scaffold::setup "${path}" "${project}" "${group_id}" "${artifact_id}"
 }
 
 main "$@"

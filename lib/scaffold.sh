@@ -10,7 +10,7 @@ function scaffold::core_content {
 cat <<-EOF > "${path}"
 buildscript {
     ext {
-        springBootVersion = '2.0.4.RELEASE'
+        springBootVersion = '${dep_id_version[0]}'
     }
     repositories {
         mavenCentral()
