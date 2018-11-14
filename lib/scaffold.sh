@@ -1,3 +1,6 @@
+# Load templates.
+. "${BASH_SOURCE%/*}/templates.sh" 
+
 function scaffold::core_content {
   if [[ "$#" < 2 ]]; then
     echo -e "[scaffold::core_content] Path and core file are (at minimum) required."
@@ -30,6 +33,7 @@ apply plugin: 'idea'
 sourceCompatibility = 1.8
 group = '${3}'
 version = "\${version}"
+$(templates::build_tasks)
 EOF
       ;;
     'gradle.properties')
