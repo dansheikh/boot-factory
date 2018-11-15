@@ -1,9 +1,35 @@
 # Load templates.
 . "${BASH_SOURCE%/*}/templates.sh" 
 
-function scaffold::core_content {
+function scaffold::resource_files {
+  if [[ "$#" != 3 ]]; then
+    echo -e "[scaffold::build_files] Path to project root, group id, and artifact id are required."
+  fi
+  
+  local target="${1}"
+  local group_id="${2}"
+  local artifact_id="${3}"
+  local file_paths=('src/main/resources/application.yml' 'src/main/resources/log4j2.yml')
+  local file_name=''
+
+  for file_path in "${file_paths[@]}"; do
+    touch "${target}/${file_path}"
+    file_name="${file_path##*/}"
+    case "${file_name}" in
+      'application.yml')
+        templates::app_yaml "${target}" "${file_path}"
+        ;;
+      'log4j2.yml')
+        templates::log4j2_yaml "${target}" "${file_path}"
+        ;;
+    esac
+  done
+
+}
+
+function scaffold::build_content {
   if [[ "$#" < 2 ]]; then
-    echo -e "[scaffold::core_content] Path and core file are (at minimum) required."
+    echo -e "[scaffold::build_content] Path and core file are (at minimum) required."
   fi
 
   local path="${1}/${2}"
@@ -30,7 +56,7 @@ apply plugin: 'io.spring.dependency-management'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
-sourceCompatibility = 1.8
+sourceCompatibility = ${4}
 group = '${3}'
 version = "\${version}"
 $(templates::build_tasks)
@@ -55,32 +81,33 @@ EOF
   esac
 }
 
-function scaffold::files {
-  if [[ "$#" != 3 ]]; then
-    echo -e "[scaffold::files] Path to project root, group id, and project name are required."
+function scaffold::build_files {
+  if [[ "$#" != 4 ]]; then
+    echo -e "[scaffold::build_files] Path to project root, group id, project name, and java version are required."
   fi
   
   local target="${1}"
   local group_id="${2}"
   local project="${3}"
-  local core_files=('build.gradle' 'gradle.properties' 'README.md' 'settings.gradle')
+  local java_version="${4}"
+  local file_paths=('build.gradle' 'gradle.properties' 'README.md' 'settings.gradle')
 
   echo -e "Setting up project files..."
 
-  for core in "${core_files[@]}"; do
-    touch "${target}/${core}"
-    case "${core}" in
+  for file_path in "${file_paths[@]}"; do
+    touch "${target}/${file_path}"
+    case "${file_path}" in
       'build.gradle')
-        scaffold::core_content "${target}" "${core}" "${group_id}"
+        scaffold::build_content "${target}" "${file_path}" "${group_id}" "${java_version}"
         ;;
       'README.md')
-        scaffold::core_content "${target}" "${core}" "${project}"
+        scaffold::build_content "${target}" "${file_path}" "${project}"
         ;;
       'settings.gradle')
-        scaffold::core_content "${target}" "${core}" "${project}"
+        scaffold::build_content "${target}" "${file_path}" "${project}"
         ;;
       *)
-        scaffold::core_content "${target}" "${core}"
+        scaffold::build_content "${target}" "${file_path}"
         ;;
       esac
   done
@@ -125,8 +152,8 @@ function scaffold::directories {
 }
 
 function scaffold::setup {
-  if [[ "$#" != 4 ]]; then
-     echo -e "[scaffold::setup] Root, project, and package arguments are required."
+  if [[ "$#" != 5 ]]; then
+     echo -e "[scaffold::setup] Root, project, package, and java version arguments are required."
      exit 1
   fi
      
@@ -134,9 +161,11 @@ function scaffold::setup {
      local project="${2}"
      local group_id="${3}"
      local artifact_id="${4}"
+     local java_version="${5}"
      local package=$(echo -e "${group_id}/${artifact_id}" | sed 's/\./\//g')
      local target="${root%/}/${project}"
 
      scaffold::directories "${target}" "${package}"
-     scaffold::files "${target}" "${group_id}" "${project}"
+     scaffold::build_files "${target}" "${group_id}" "${project}" "${java_version}"
+     scaffold::resource_files "${target}" "${group_id}" "${artifact_id}"
 }

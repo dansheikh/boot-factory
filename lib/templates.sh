@@ -1,3 +1,60 @@
+function templates::log4j2_yaml {
+  cat <<-'EOF' > "${1}/${2}"
+Configuration:
+  Appenders:
+    Console:
+      PatternLayout:
+        Pattern: '%d{yyyy-MMM-dd HH:mm:ss a} - %msg%n'
+      name: STDOUT
+      target: SYSTEM_OUT
+  Loggers:
+    Root:
+      AppenderRef:
+        - ref: STDOUT
+      level: warn
+    Logger:
+      - name: com.springframework.beans
+        level: error
+        additivity: false
+        AppenderRef:
+          - ref: STDOUT
+      - name: com.springframework.boot
+        level: error
+        additivity: false
+        AppenderRef:
+          - ref: STDOUT
+      - name: com.springframework.core
+        level: error
+        additivity: false
+        AppenderRef:
+          - ref: STDOUT
+EOF
+}
+
+function templates::app_yaml {
+  cat <<-'EOF' > "${1}/${2}"
+spring:
+  flyway:
+    enabled: true
+    baseline-version: 0
+    sql-migration-prefix: v
+    baselineOnMigrate: true
+  jpa:
+    show-sql: true
+    generate-ddl: false
+
+---
+
+spring:
+  profiles: dev
+
+---
+
+spring:
+  profiles: test
+EOF
+}
+
 function templates::config_tasks {
   cat <<-'EOF'
 tasks.withType(JavaExec) {

@@ -6,11 +6,16 @@
 . "${BASH_SOURCE%/*}/lib/scaffold.sh"
 
 function main {
+  # Global variables.
+  xml=false
+  
+  # Local variables.
   local undefined='Undefined'
   local group_id=''
   local artifact_id=''
   local main_name=''
   local project=''
+  local java_version=1.8
   local secure=false
   local path=''
 
@@ -22,12 +27,12 @@ function main {
       a)
         artifact_id="${!OPTIND}"; OPTIND=$((OPTIND + 1))
         ;;
+      g)
+        group_id="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+        ;;
       h)
         help::usage
         exit 0
-        ;;
-      g)
-        group_id="${!OPTIND}"; OPTIND=$((OPTIND + 1))
         ;;
       n)
         main_name="${!OPTIND}"; OPTIND=$((OPTIND + 1))
@@ -37,6 +42,12 @@ function main {
         ;;
       s)
         secure=true
+        ;;
+      v)
+        java_version="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+        ;;
+      x)
+        xml=true
         ;;
       -)
         case "${OPTARG}" in
@@ -68,6 +79,18 @@ function main {
           project=*)
             project="${OPTARG#*}"
             ;;
+          secure)
+            secure=true
+            ;;
+          version)
+            java_version="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+            ;;
+          version=*)
+            java_version="${OPTARG#*=}"
+            ;;
+          xml)
+            xml=true
+            ;;
           *)
             if [[ "$OPTERR" = 1 && "${optspec:0:1}" != ":" ]]; then
               echo "Unknown argument --${OPTARG}" >&2
@@ -95,7 +118,7 @@ function main {
   # 1. Version dependencies.
   dependencies::id
   # 2. Create scaffold, i.e. directories and files.
-  scaffold::setup "${path}" "${project}" "${group_id}" "${artifact_id}"
+  scaffold::setup "${path}" "${project}" "${group_id}" "${artifact_id}" "${java_version}"
 }
 
 main "$@"

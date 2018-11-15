@@ -9,7 +9,7 @@ EOF
 	cat <<-EOF
   Usage:
 
-  $0 --groupId org.example --artifactId test --name main-class-name --project project-name --secure project-dir
+  $0 --groupId org.example --artifactId test --name main-class-name --project project-name --version 1.9 --secure --xml project-dir
 
       Parameters             Description
       ----------             -----------
@@ -18,7 +18,9 @@ EOF
       -h, --help             Utility help documentation.
       -n, --name             Main class name.
       -p, --project          Project name.
-      -s, --secure           [Optional] Enable security.
+      -s, --secure           [Optional flag] Enable security.
+      -v, --version          [Optional] Java version, defaults to 1.8
+      -x, --xml              [Optional flag] Enable SOAP client support.
 
 	EOF
 }
