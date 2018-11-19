@@ -1,5 +1,18 @@
-dep_id_list=('org.springframework.boot:spring-boot-gradle-plugin' 'com.squareup.retrofit2:retrofit' 'org.spockframework:spock-core')
-dep_id_version=()
+# Runtime dependencies.
+runtime_ids=('org.springframework.boot:spring-boot-devtools')
+runtime_id_versions=()
+
+# Compile-time dependencies.
+compile_ids=('org.springframework.boot:spring-boot-gradle-plugin' 'com.squareup.retrofit2:retrofit' 'org.spockframework:spock-core')
+compile_id_versions=()
+
+# Test compile-time dependencies.
+test_compile_ids=('org.springframework.boot:spring-boot-starter-test' 'org.springframework.security:spring-security-test')
+test_compile_id_versions=()
+
+# JAX-WS dependencies.
+jaxws_ids=('com.sun.xml.ws:jaxws-tools')
+jaxws_id_versions=()
 
 function dependencies::camelCase {
   local artifact="${1}"
@@ -27,19 +40,78 @@ function dependencies::extractArtifact {
 }
 
 function dependencies::id {
-    local version=''
+  local args=("$@")
+  local size=$#
+  local limit=$(($size - 1))
+  local dep_ids=("${args[@]:0:$limit}")
+  local type="${args[@]:$limit}"
+  local version_ids=()
+  local version=''
 
-    echo -e "Setting up dependencies..."
+  for dep_id in "${dep_ids[@]}"; do
+    # echo -e "Searching: http://search.maven.org/solrsearch/select?q=id:%22${dep_id}%22"
 
-    for dep_id in ${dep_id_list[@]}; do
-        echo -e "Searching: http://search.maven.org/solrsearch/select?q=id:%22${dep_id}%22"
+    version=$(curl -vs "http://search.maven.org/solrsearch/select?q=id:%22${dep_id}%22" 2>&1 | awk 'match($0, /\"latestVersion\":\"[0-9]([\.-]+[0-9A-Za-z]+)*\"/) {print substr($0, RSTART, RLENGTH)}' | grep -Eo '[0-9]([\.-]+[0-9A-Za-z]+)*')
 
-        version=$(curl -vs "http://search.maven.org/solrsearch/select?q=id:%22${dep_id}%22" 2>&1 | awk 'match($0, /\"latestVersion\":\"[0-9]([\.-]+[0-9A-Za-z]+)*\"/) {print substr($0, RSTART, RLENGTH)}' | grep -Eo '[0-9]([\.-]+[0-9A-Za-z]+)*')
+    if [[ -z "${version}" ]]; then
+      version="0.0.0"
+    fi
 
-        if [[ -n "${version}" ]]; then
-          dep_id_version+=("${version}")
-        else
-          dep_id_version+=("0.0.0")
-        fi
-    done
+    version_ids+=("${version}")
+
+  done
+  
+  case "${type}" in
+    "runtime")
+      echo "${version_ids[@]}" > /tmp/boot-factory-run-time.txt
+    ;;
+    "compile")
+      echo "${version_ids[@]}" > /tmp/boot-factory-compile-time.txt
+    ;;
+    "test-compile")
+      echo "${version_ids[@]}" > /tmp/boot-factory-test-compile-time.txt
+    ;;
+    "jaxws")
+      echo "${version_ids[@]}" > /tmp/boot-factory-jax-ws-time.txt
+    ;;
+    esac
+}
+
+function dependencies::main {
+  local pids=()
+  local total=4
+  local complete=0
+  local tmp=0
+  local hashes='#####'
+
+  dependencies::id "${runtime_ids[@]}" "runtime" &
+  pids+=($!)
+  dependencies::id "${compile_ids[@]}" "compile" &
+  pids+=($!)
+  dependencies::id "${test_compile_ids[@]}" "test-compile" &
+  pids+=($!)
+  dependencies::id "${jaxws_ids[@]}" "jaxws" &
+  pids+=($!)
+
+  echo -n "Configuring dependencies..."
+  
+  while sleep 1; do
+    echo -n "."
+  done &
+
+  wait "${pids[@]}"
+
+  kill $! && wait $! 2>/dev/null
+
+  # Clear dependencies configuration indicator line.
+  echo ""
+
+  # Slurp variables from temporary files.
+  runtime_id_versions+=($(</tmp/boot-factory-run-time.txt))
+  compile_id_versions+=($(</tmp/boot-factory-compile-time.txt))
+  test_compile_id_versions+=($(</tmp/boot-factory-test-compile-time.txt))
+  jaxws_id_versions+=($(</tmp/boot-factory-jax-ws-time.txt))
+
+  # Clean-up temporary files.
+  rm -f /tmp/boot-factory-*-time.txt 
 }

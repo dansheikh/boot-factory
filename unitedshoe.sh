@@ -116,7 +116,7 @@ function main {
   fi
 
   # 1. Version dependencies.
-  dependencies::id
+  dependencies::main
   # 2. Create scaffold, i.e. directories and files.
   scaffold::setup "${path}" "${project}" "${group_id}" "${artifact_id}" "${java_version}"
 }
