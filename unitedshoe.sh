@@ -7,7 +7,8 @@
 
 function main {
   # Global variables.
-  xml=false
+  xml=1
+  secure=1
   
   # Local variables.
   local undefined='Undefined'
@@ -16,7 +17,6 @@ function main {
   local main_name=''
   local project=''
   local java_version=1.8
-  local secure=false
   local path=''
 
   local machine=$(uname -s)
@@ -41,13 +41,13 @@ function main {
         project="${!OPTIND}"; OPTIND=$((OPTIND + 1))
         ;;
       s)
-        secure=true
+        secure=0
         ;;
       v)
         java_version="${!OPTIND}"; OPTIND=$((OPTIND + 1))
         ;;
       x)
-        xml=true
+        xml=0
         ;;
       -)
         case "${OPTARG}" in
@@ -80,7 +80,7 @@ function main {
             project="${OPTARG#*}"
             ;;
           secure)
-            secure=true
+            secure=0
             ;;
           version)
             java_version="${!OPTIND}"; OPTIND=$((OPTIND + 1))
@@ -89,7 +89,7 @@ function main {
             java_version="${OPTARG#*=}"
             ;;
           xml)
-            xml=true
+            xml=0
             ;;
           *)
             if [[ "$OPTERR" = 1 && "${optspec:0:1}" != ":" ]]; then

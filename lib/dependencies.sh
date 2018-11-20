@@ -90,8 +90,11 @@ function dependencies::main {
   pids+=($!)
   dependencies::id "${test_compile_ids[@]}" "test-compile" &
   pids+=($!)
-  dependencies::id "${jaxws_ids[@]}" "jaxws" &
-  pids+=($!)
+
+  if [[ $secure == 0 ]]; then
+    dependencies::id "${jaxws_ids[@]}" "jaxws" &
+    pids+=($!)
+  fi
 
   echo -n "Configuring dependencies..."
   

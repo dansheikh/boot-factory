@@ -90,7 +90,8 @@ task wsimport {
     ext.groupName = 'com.capgroup.esi.finance'
     ext.artifactName = 'pershing.soap.entities'
     ext.sourcesDir = file("${sourceSets.main.java.srcDirs[0]}")
-    ext.wsdlMap = ['ordering': 'https://xat-www.netxservice.inautix.com/soap/orderprocessing/1/wsdl/orderprocessing_12.wsdl']
+    // TODO: Add SOAP 'key-value' pair, where 'key' is package name and 'value' is WSDL URL.
+    ext.wsdlMap = ['': '']
 
     outputs.dir sourceSets.main.output.classesDir
 
@@ -108,11 +109,35 @@ task wsimport {
     }
 }
 
+wsimport.onlyIf {
+    // TODO: Provide full path to entities generated from WSDL
+    String path = "${groupName}/${artifactName}".replaceAll("\\.", "/")
+    File entities = file("${sourceSets.main.java.srcDirs[0]}/${path}")
+    return (entities.exists() && entities.list().length > 0)
+}
+
+compileJava {
+    dependsOn wsimport
+}
+
 EOF
 }
 
 function templates::build_tasks {
   templates::config_tasks
   templates::javadoc_task
-  templates::soap_import_task
+
+  if [[ $xml == 0 ]]; then
+    templates::soap_import_task
+  fi
+}
+
+function templates::build_dependencies {
+  templates::runtime_deps
+  templates::compile_deps
+  templates::test_compile_deps
+
+  if [[ $xml == 0 ]]; then
+    templates::jaxws_deps
+  fi
 }
